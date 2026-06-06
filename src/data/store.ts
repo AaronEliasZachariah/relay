@@ -31,7 +31,12 @@ import type {
   Plan,
 } from './types';
 
-const uid = () => Math.random().toString(36).slice(2, 10);
+// UUID v4 so ids created offline are accepted by the backend (uuid PKs).
+const uid = () =>
+  'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (ch) => {
+    const r = (Math.random() * 16) | 0;
+    return (ch === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+  });
 
 type State = {
   hydrated: boolean;
@@ -47,6 +52,12 @@ type State = {
 };
 
 type WithOptionalId<T, K extends keyof T> = Omit<T, K | 'id'> & { id?: string };
+
+/** Snapshot shape returned by the backend's GET /v1/sync. */
+type ServerSnapshot = Pick<
+  State,
+  'groups' | 'contacts' | 'campaigns' | 'rules' | 'knowledge' | 'activity'
+>;
 
 type Actions = {
   completeOnboarding: (b: Partial<BusinessProfile>) => void;
@@ -75,6 +86,9 @@ type Actions = {
   deleteKnowledge: (id: string) => void;
 
   resolveDraft: (activityId: string, approve: boolean) => void;
+
+  /** Replace local collections with a backend snapshot (offline-first sync). */
+  hydrateFromServer: (snap: ServerSnapshot) => void;
 };
 
 const initialState: State = {
@@ -205,6 +219,8 @@ export const useStore = create<State & Actions>()(
               )
             : s.activity.filter((a) => a.id !== activityId),
         })),
+
+      hydrateFromServer: (snap) => set({ ...snap, hydrated: true, onboarded: true }),
     }),
     {
       name: 'relay-store-v1',
