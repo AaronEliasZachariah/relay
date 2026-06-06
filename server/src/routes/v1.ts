@@ -9,6 +9,7 @@ import { Hono } from 'hono';
 import { db } from '../db/client.js';
 import * as t from '../db/schema.js';
 import { tenant } from '../lib/tenant.js';
+import { sendToContact } from '../services/sender.js';
 
 export const v1 = new Hono();
 v1.use('*', tenant);
@@ -218,16 +219,10 @@ v1.post('/send', async (c) => {
   }
   if (contactIds.length === 0) return c.json({ queued: 0 });
 
-  await db.insert(t.messages).values(
-    contactIds.map((cid) => ({
-      businessId,
-      contactId: cid,
-      direction: 'outbound' as const,
-      kind: 'manual' as const,
-      channel: 'sms' as const,
-      body,
-      status: 'sent', // mock until Phase 3
-    })),
-  );
-  return c.json({ queued: contactIds.length });
+  let queued = 0;
+  for (const id of contactIds) {
+    const r = await sendToContact(businessId, id, body, { kind: 'manual' });
+    if (r.ok) queued += 1;
+  }
+  return c.json({ queued });
 });

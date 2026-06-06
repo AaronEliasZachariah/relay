@@ -2,7 +2,10 @@ import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 
 import { env, features } from './lib/env.js';
+import { dev } from './routes/dev.js';
 import { v1 } from './routes/v1.js';
+import { webhooks } from './routes/webhooks.js';
+import { startScheduler } from './scheduler.js';
 
 const app = new Hono();
 
@@ -17,12 +20,15 @@ app.get('/health', (c) =>
 );
 
 app.route('/v1', v1); // sync + commands (Phase 2)
-// app.route('/v1/webhooks', webhooks) // Phase 3
+app.route('/v1/webhooks', webhooks); // provider webhooks (Phase 3/5)
+app.route('/v1/dev', dev); // dev-only pipeline triggers
 
 
 serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   // eslint-disable-next-line no-console
   console.log(`▸ Relay API listening on http://localhost:${info.port}  (${env.NODE_ENV})`);
 });
+
+startScheduler();
 
 export default app;

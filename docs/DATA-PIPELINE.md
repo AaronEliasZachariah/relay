@@ -424,18 +424,21 @@ Phased so each step is shippable and testable on its own. ✅ = done, 🔜 = nex
 
 | Phase | Deliverable | Status |
 |---|---|---|
-| **0** | `server/` scaffold: Hono app, env, health check, Docker, Drizzle config | 🔜 |
-| **1** | DB schema (mirrors `types.ts`) + migrations + tenant/auth middleware | 🔜 |
-| **2** | Sync API: `GET /v1/sync`, upsert endpoints; wire the app's `RelayApi` | 🔜 |
-| **3** | Twilio send + `POST /v1/send` + delivery webhook → `messages` log | |
-| **4** | Scheduler (pg-boss): due campaigns → audience → render → send | |
-| **5** | Inbound webhook → rule match → `buildReplyPrompt` → AI → approve/send | |
+| **0** | `server/` scaffold: Hono app, env, health, Docker, Drizzle config | ✅ |
+| **1** | DB schema (mirrors `types.ts`) + migrations + tenant middleware | ✅ |
+| **2** | Sync API: `GET /v1/sync`, upsert endpoints; client `RelayApi` wired | ✅ |
+| **3** | Send adapter (Twilio/mock) + `POST /v1/send` + delivery webhooks | ✅ mock |
+| **4** | Scheduler: due campaigns → audience → merge → idempotent send | ✅ mock |
+| **5** | Inbound → opt-out → rule match → `buildReplyPrompt` → AI → approve/send | ✅ mock |
 | **6** | Billing webhook (RevenueCat) + Pro gating | |
 | **7** | WhatsApp adapter (second channel) | |
 | **8** | Deploy (Render/Railway) + logging/metrics | |
 
-I'll start at **Phase 0–2** so the app talks to a real backend end-to-end with
-mock providers, then layer in Twilio + scheduler + AI (Phases 3–5).
+Phases **0–5 are built and verified end-to-end** against local Postgres with mock
+adapters (`npm run db:migrate && db:seed && dev`, then the dev endpoints in
+[`server/README.md`](../server/README.md)). Each flips to live by setting the
+matching credentials — feature flags in `server/src/lib/env.ts` switch
+mock↔live with no code change. Phases 6–8 remain.
 
 ---
 
