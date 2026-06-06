@@ -20,6 +20,14 @@ const schema = z.object({
   ANTHROPIC_API_KEY: z.string().optional(),
   GOOGLE_VERTEX_PROJECT: z.string().optional(),
   GOOGLE_VERTEX_LOCATION: z.string().default('us-central1'),
+
+  // WhatsApp Business Cloud API (Phase 7)
+  WHATSAPP_TOKEN: z.string().optional(),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
+  WHATSAPP_VERIFY_TOKEN: z.string().default('relay-verify'),
+
+  // RevenueCat billing webhook (Phase 6)
+  REVENUECAT_AUTH_HEADER: z.string().optional(),
 });
 
 export const env = schema.parse(process.env);
@@ -27,6 +35,10 @@ export const env = schema.parse(process.env);
 export const features = {
   /** Real SMS sending vs. the mock adapter. */
   twilio: Boolean(env.TWILIO_ACCOUNT_SID && env.TWILIO_AUTH_TOKEN && env.TWILIO_FROM),
+  /** Real WhatsApp sending vs. the mock adapter. */
+  whatsapp: Boolean(env.WHATSAPP_TOKEN && env.WHATSAPP_PHONE_NUMBER_ID),
   /** Real AI generation vs. the deterministic mock. */
   ai: Boolean(env.ANTHROPIC_API_KEY || env.GOOGLE_VERTEX_PROJECT),
+  /** Billing webhook authentication configured. */
+  billing: Boolean(env.REVENUECAT_AUTH_HEADER),
 };

@@ -7,7 +7,7 @@ import { and, eq } from 'drizzle-orm';
 
 import { db } from '../db/client.js';
 import * as t from '../db/schema.js';
-import { sms } from './messaging.js';
+import { getAdapter } from './messaging.js';
 
 type Kind = 'auto-send' | 'auto-reply' | 'manual';
 
@@ -57,7 +57,8 @@ export async function sendToContact(
     })
     .returning();
 
-  const res = await sms.send(contact.phoneE164, body);
+  const channel = opts.channel ?? 'sms';
+  const res = await getAdapter(channel).send(contact.phoneE164, body);
   const status = res.status === 'failed' ? 'failed' : 'sent';
 
   await db.update(t.messages).set({ status }).where(eq(t.messages.id, msg!.id));

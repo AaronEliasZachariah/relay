@@ -1,9 +1,11 @@
 /**
- * Messaging channel adapter. Uses the real Twilio REST API when credentials are
- * present, otherwise a mock that logs and "accepts" — so the whole pipeline runs
- * locally with no external account. (No SDK dependency: plain fetch.)
+ * Messaging channel adapters. Picks the real provider when credentials exist,
+ * else a mock that logs and "accepts" — so the whole pipeline runs locally with
+ * no external account. (No SDKs: plain fetch to the Twilio / Meta REST APIs.)
  */
 import { env, features } from '../lib/env.js';
+
+type Channel = 'sms' | 'whatsapp';
 
 export type SendResult = {
   providerId?: string;
@@ -15,13 +17,15 @@ export interface MessagingAdapter {
   send(to: string, body: string): Promise<SendResult>;
 }
 
-const mockAdapter: MessagingAdapter = {
-  async send(to, body) {
-    // eslint-disable-next-line no-console
-    console.log(`  [mock-sms] → ${to}: ${body.slice(0, 70)}${body.length > 70 ? '…' : ''}`);
-    return { providerId: 'mock_' + crypto.randomUUID().slice(0, 8), status: 'sent' };
-  },
-};
+function mockAdapter(label: string): MessagingAdapter {
+  return {
+    async send(to, body) {
+      // eslint-disable-next-line no-console
+      console.log(`  [mock-${label}] → ${to}: ${body.slice(0, 70)}${body.length > 70 ? '…' : ''}`);
+      return { providerId: 'mock_' + crypto.randomUUID().slice(0, 8), status: 'sent' };
+    },
+  };
+}
 
 const twilioAdapter: MessagingAdapter = {
   async send(to, body) {
@@ -29,10 +33,7 @@ const twilioAdapter: MessagingAdapter = {
     const auth = Buffer.from(`${sid}:${env.TWILIO_AUTH_TOKEN}`).toString('base64');
     const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json`, {
       method: 'POST',
-      headers: {
-        Authorization: `Basic ${auth}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
+      headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ To: to, From: env.TWILIO_FROM!, Body: body }),
     });
     if (!res.ok) return { status: 'failed', error: `twilio ${res.status}: ${await res.text()}` };
@@ -41,7 +42,29 @@ const twilioAdapter: MessagingAdapter = {
   },
 };
 
-export const sms: MessagingAdapter = features.twilio ? twilioAdapter : mockAdapter;
+const whatsappAdapter: MessagingAdapter = {
+  async send(to, body) {
+    const res = await fetch(`https://graph.facebook.com/v21.0/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.WHATSAPP_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        messaging_product: 'whatsapp',
+        to: to.replace(/^\+/, ''),
+        type: 'text',
+        text: { body },
+      }),
+    });
+    if (!res.ok) return { status: 'failed', error: `whatsapp ${res.status}: ${await res.text()}` };
+    const data = (await res.json()) as { messages?: { id?: string }[] };
+    return { providerId: data.messages?.[0]?.id, status: 'queued' };
+  },
+};
+
+/** The adapter for a channel — live when configured, otherwise the mock. */
+export function getAdapter(channel: Channel): MessagingAdapter {
+  if (channel === 'whatsapp') return features.whatsapp ? whatsappAdapter : mockAdapter('whatsapp');
+  return features.twilio ? twilioAdapter : mockAdapter('sms');
+}
 
 /** GSM-7 segment count (160 / 153 multipart). */
 export function smsSegments(body: string): number {

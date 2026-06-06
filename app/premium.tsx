@@ -6,7 +6,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Button, Icon, Text } from '@/components';
 import type { IconName } from '@/components/Icon';
-import { useStore } from '@/data/store';
+import { purchasePro } from '@/services/purchases';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, shadows, spacing } from '@/theme/tokens';
 
@@ -22,11 +22,10 @@ export default function Premium() {
   const router = useRouter();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
-  const setPlan = useStore((s) => s.setPlan);
   const [billing, setBilling] = useState<'annual' | 'monthly'>('annual');
 
-  const subscribe = () => {
-    setPlan('pro');
+  const subscribe = async () => {
+    await purchasePro(billing);
     router.back();
   };
 

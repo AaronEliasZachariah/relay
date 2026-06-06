@@ -20,8 +20,14 @@ export type InboundResult = {
   messageId?: string;
 };
 
-export async function handleInbound(input: { to: string; from: string; body: string }): Promise<InboundResult> {
+export async function handleInbound(input: {
+  to: string;
+  from: string;
+  body: string;
+  channel?: 'sms' | 'whatsapp';
+}): Promise<InboundResult> {
   const { to, from, body } = input;
+  const channel = input.channel ?? 'sms';
 
   // Resolve the business by its sending number (fallback to the only one in dev).
   let biz = to ? (await db.select().from(t.businesses).where(eq(t.businesses.sendingNumber, to)))[0] : undefined;
@@ -47,7 +53,7 @@ export async function handleInbound(input: { to: string; from: string; body: str
     contactId,
     direction: 'inbound',
     kind: 'manual',
-    channel: 'sms',
+    channel,
     body,
     status: 'received',
   });
@@ -83,7 +89,7 @@ export async function handleInbound(input: { to: string; from: string; body: str
   // Business hours.
   if (rule.businessHoursOnly && !isWithinBusinessHours(biz.hours)) {
     if (rule.afterHoursMessage) {
-      await sendToContact(biz.id, contactId, rule.afterHoursMessage, { kind: 'auto-reply', ruleId: rule.id });
+      await sendToContact(biz.id, contactId, rule.afterHoursMessage, { kind: 'auto-reply', ruleId: rule.id, channel });
       return { ok: true, action: 'after_hours' };
     }
     return { ok: true, action: 'after_hours_silent' };
@@ -108,7 +114,7 @@ export async function handleInbound(input: { to: string; from: string; body: str
       contactId,
       direction: 'outbound',
       kind: 'auto-reply',
-      channel: 'sms',
+      channel,
       body: draft,
       status: 'awaiting-approval',
       ruleId: rule.id,
@@ -116,6 +122,6 @@ export async function handleInbound(input: { to: string; from: string; body: str
     return { ok: true, action: 'awaiting_approval', draft };
   }
 
-  const sent = await sendToContact(biz.id, contactId, draft, { kind: 'auto-reply', ruleId: rule.id });
+  const sent = await sendToContact(biz.id, contactId, draft, { kind: 'auto-reply', ruleId: rule.id, channel });
   return { ok: true, action: 'replied', draft, messageId: sent.messageId };
 }

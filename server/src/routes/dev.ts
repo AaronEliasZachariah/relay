@@ -22,9 +22,9 @@ dev.use('*', async (c, next) => {
 /** Simulate an inbound customer text → drives the auto-reply pipeline. */
 dev.post('/inbound', tenant, async (c) => {
   const businessId = c.get('businessId');
-  const { from, body } = await c.req.json();
+  const { from, body, channel } = await c.req.json();
   const [biz] = await db.select().from(t.businesses).where(eq(t.businesses.id, businessId));
-  const result = await handleInbound({ to: biz?.sendingNumber ?? '', from, body });
+  const result = await handleInbound({ to: biz?.sendingNumber ?? '', from, body, channel });
   return c.json(result);
 });
 

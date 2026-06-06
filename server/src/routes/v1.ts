@@ -8,6 +8,7 @@ import { Hono } from 'hono';
 
 import { db } from '../db/client.js';
 import * as t from '../db/schema.js';
+import { FREE_LIMITS } from '../lib/plan.js';
 import { tenant } from '../lib/tenant.js';
 import { sendToContact } from '../services/sender.js';
 
@@ -40,7 +41,21 @@ v1.get('/sync', async (c) => {
     byGroup.set(m.groupId, arr);
   }
 
+  const [biz] = await db.select().from(t.businesses).where(eq(t.businesses.id, businessId));
+
   return c.json({
+    business: biz
+      ? {
+          id: biz.id,
+          name: biz.name,
+          category: biz.category,
+          number: biz.sendingNumber ?? undefined,
+          signature: biz.signature ?? undefined,
+          defaultChannel: biz.defaultChannel,
+          hours: biz.hours ?? undefined,
+          plan: biz.plan,
+        }
+      : null,
     groups: groups.map((g) => ({
       id: g.id,
       name: g.name,
@@ -114,6 +129,21 @@ v1.get('/sync', async (c) => {
 v1.put('/campaigns', async (c) => {
   const businessId = c.get('businessId');
   const b = await c.req.json();
+
+  // Pro gating — free plan caps how many campaigns you can create.
+  const existing = b.id
+    ? (await db.select({ id: t.campaigns.id }).from(t.campaigns).where(eq(t.campaigns.id, b.id)))[0]
+    : undefined;
+  if (!existing) {
+    const [biz] = await db.select({ plan: t.businesses.plan }).from(t.businesses).where(eq(t.businesses.id, businessId));
+    if (biz?.plan === 'free') {
+      const count = (await db.select({ id: t.campaigns.id }).from(t.campaigns).where(eq(t.campaigns.businessId, businessId))).length;
+      if (count >= FREE_LIMITS.campaigns) {
+        return c.json({ error: 'plan_limit', resource: 'campaigns', limit: FREE_LIMITS.campaigns }, 402);
+      }
+    }
+  }
+
   const id: string = b.id ?? crypto.randomUUID();
   const row = {
     id,
@@ -148,6 +178,21 @@ v1.put('/campaigns', async (c) => {
 v1.put('/rules', async (c) => {
   const businessId = c.get('businessId');
   const b = await c.req.json();
+
+  // Pro gating — free plan caps how many auto-reply rules you can create.
+  const existing = b.id
+    ? (await db.select({ id: t.replyRules.id }).from(t.replyRules).where(eq(t.replyRules.id, b.id)))[0]
+    : undefined;
+  if (!existing) {
+    const [biz] = await db.select({ plan: t.businesses.plan }).from(t.businesses).where(eq(t.businesses.id, businessId));
+    if (biz?.plan === 'free') {
+      const count = (await db.select({ id: t.replyRules.id }).from(t.replyRules).where(eq(t.replyRules.businessId, businessId))).length;
+      if (count >= FREE_LIMITS.rules) {
+        return c.json({ error: 'plan_limit', resource: 'rules', limit: FREE_LIMITS.rules }, 402);
+      }
+    }
+  }
+
   const id: string = b.id ?? crypto.randomUUID();
   const row = {
     id,

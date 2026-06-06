@@ -11,8 +11,12 @@ miss a booking.
 > from sending SMS in the background or auto-replying to texts, so Relay sends
 > and receives server-side through a business number (Twilio for SMS, WhatsApp
 > Business next). The app is a fast, offline-first client — identical on both
-> platforms. See the **[Data Pipeline & Architecture Showcase](docs/DATA-PIPELINE.md)**
-> (diagrams + build plan) and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+> platforms.
+>
+> **New to these platforms (Twilio, RevenueCat, webhooks…)? Start with the
+> plain-English [Guide](docs/GUIDE.md)** — it explains every piece with mind maps.
+> Deep dives: the [Data Pipeline Showcase](docs/DATA-PIPELINE.md) and
+> [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Features
 
