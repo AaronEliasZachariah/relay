@@ -20,8 +20,9 @@ export interface MessagingAdapter {
 function mockAdapter(label: string): MessagingAdapter {
   return {
     async send(to, body) {
+      // Avoid logging PII (full number / message body).
       // eslint-disable-next-line no-console
-      console.log(`  [mock-${label}] → ${to}: ${body.slice(0, 70)}${body.length > 70 ? '…' : ''}`);
+      console.log(`  [mock-${label}] → ***${to.slice(-4)} (${body.length} chars)`);
       return { providerId: 'mock_' + crypto.randomUUID().slice(0, 8), status: 'sent' };
     },
   };

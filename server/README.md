@@ -22,6 +22,8 @@ Health: `GET http://localhost:8787/health` → shows which integrations are live
 
 ## Exercise the pipeline (dev-only endpoints)
 
+> Enable first: set `ALLOW_DEV_ROUTES=true` in `.env` (off by default; never in production).
+
 ```bash
 # Pull the full snapshot (what the app syncs)
 curl localhost:8787/v1/sync

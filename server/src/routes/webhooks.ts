@@ -42,8 +42,12 @@ webhooks.post('/twilio/status', async (c) => {
  * lapses. `app_user_id` is the businessId we set when configuring Purchases.
  */
 webhooks.post('/revenuecat', async (c) => {
-  if (env.REVENUECAT_AUTH_HEADER && c.req.header('Authorization') !== env.REVENUECAT_AUTH_HEADER) {
-    return c.json({ error: 'unauthorized' }, 401);
+  const expected = env.REVENUECAT_AUTH_HEADER;
+  if (expected) {
+    if (c.req.header('Authorization') !== expected) return c.json({ error: 'unauthorized' }, 401);
+  } else if (env.NODE_ENV === 'production') {
+    // Fail closed: never process unverified billing events in production.
+    return c.json({ error: 'webhook_not_configured' }, 503);
   }
   const payload = (await c.req.json().catch(() => ({}))) as { event?: Record<string, string> };
   const ev = payload.event ?? {};

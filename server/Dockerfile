@@ -9,6 +9,10 @@ RUN npm ci
 
 COPY . .
 
+# Run as the unprivileged built-in node user.
+RUN chown -R node:node /app
+USER node
+
 ENV NODE_ENV=production
 # Platforms (Render/Railway/Fly) inject PORT + DATABASE_URL at runtime.
 EXPOSE 8787

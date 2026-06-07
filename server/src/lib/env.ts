@@ -12,6 +12,8 @@ const schema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DATABASE_URL: z.string().default('postgres://relay:relay@localhost:5432/relay'),
   JWT_SECRET: z.string().default('dev-only-change-me'),
+  /** Dev-only HTTP helpers under /v1/dev are active only when this is 'true'. */
+  ALLOW_DEV_ROUTES: z.string().optional(),
 
   // Optional until their phase — presence flips a feature from mock to live.
   TWILIO_ACCOUNT_SID: z.string().optional(),

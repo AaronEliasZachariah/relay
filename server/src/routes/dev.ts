@@ -15,7 +15,10 @@ import { runDueCampaigns } from '../pipeline/autoSend.js';
 export const dev = new Hono();
 
 dev.use('*', async (c, next) => {
-  if (env.NODE_ENV === 'production') return c.json({ error: 'disabled_in_production' }, 403);
+  // Secure by default: off in production AND off unless explicitly opted in.
+  if (env.NODE_ENV === 'production' || env.ALLOW_DEV_ROUTES !== 'true') {
+    return c.json({ error: 'dev_routes_disabled' }, 403);
+  }
   await next();
 });
 

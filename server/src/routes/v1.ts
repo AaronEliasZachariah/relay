@@ -17,6 +17,10 @@ v1.use('*', tenant);
 
 const ms = (d: Date | null) => (d ? d.getTime() : undefined);
 
+// Basic input limits to reject malformed / oversized payloads (DoS, AI-cost abuse).
+const MAX = { name: 200, message: 2000, instruction: 2000, content: 50_000, body: 2000 };
+const overLimit = (v: unknown, max: number) => typeof v === 'string' && v.length > max;
+
 /* ------------------------------ sync (pull) ------------------------------ */
 
 v1.get('/sync', async (c) => {
@@ -130,11 +134,17 @@ v1.put('/campaigns', async (c) => {
   const businessId = c.get('businessId');
   const b = await c.req.json();
 
-  // Pro gating — free plan caps how many campaigns you can create.
+  if (typeof b.message !== 'string' || b.message.length === 0 || !b.target || overLimit(b.message, MAX.message) || overLimit(b.name, MAX.name)) {
+    return c.json({ error: 'invalid_input' }, 400);
+  }
+
   const existing = b.id
-    ? (await db.select({ id: t.campaigns.id }).from(t.campaigns).where(eq(t.campaigns.id, b.id)))[0]
+    ? (await db.select({ businessId: t.campaigns.businessId }).from(t.campaigns).where(eq(t.campaigns.id, b.id)))[0]
     : undefined;
+  // IDOR guard: never touch a row owned by another tenant.
+  if (existing && existing.businessId !== businessId) return c.json({ error: 'not_found' }, 404);
   if (!existing) {
+    // Pro gating — free plan caps how many campaigns you can create.
     const [biz] = await db.select({ plan: t.businesses.plan }).from(t.businesses).where(eq(t.businesses.id, businessId));
     if (biz?.plan === 'free') {
       const count = (await db.select({ id: t.campaigns.id }).from(t.campaigns).where(eq(t.campaigns.businessId, businessId))).length;
@@ -179,11 +189,17 @@ v1.put('/rules', async (c) => {
   const businessId = c.get('businessId');
   const b = await c.req.json();
 
-  // Pro gating — free plan caps how many auto-reply rules you can create.
+  if (typeof b.instruction !== 'string' || b.instruction.length === 0 || !b.target || overLimit(b.instruction, MAX.instruction) || overLimit(b.name, MAX.name) || overLimit(b.afterHoursMessage, MAX.instruction)) {
+    return c.json({ error: 'invalid_input' }, 400);
+  }
+
   const existing = b.id
-    ? (await db.select({ id: t.replyRules.id }).from(t.replyRules).where(eq(t.replyRules.id, b.id)))[0]
+    ? (await db.select({ businessId: t.replyRules.businessId }).from(t.replyRules).where(eq(t.replyRules.id, b.id)))[0]
     : undefined;
+  // IDOR guard: never touch a row owned by another tenant.
+  if (existing && existing.businessId !== businessId) return c.json({ error: 'not_found' }, 404);
   if (!existing) {
+    // Pro gating — free plan caps how many auto-reply rules you can create.
     const [biz] = await db.select({ plan: t.businesses.plan }).from(t.businesses).where(eq(t.businesses.id, businessId));
     if (biz?.plan === 'free') {
       const count = (await db.select({ id: t.replyRules.id }).from(t.replyRules).where(eq(t.replyRules.businessId, businessId))).length;
@@ -229,6 +245,13 @@ v1.put('/rules', async (c) => {
 v1.put('/knowledge', async (c) => {
   const businessId = c.get('businessId');
   const b = await c.req.json();
+  if (typeof b.content !== 'string' || overLimit(b.content, MAX.content) || overLimit(b.title, MAX.name)) {
+    return c.json({ error: 'invalid_input' }, 400);
+  }
+  if (b.id) {
+    const [existing] = await db.select({ businessId: t.knowledgeDocs.businessId }).from(t.knowledgeDocs).where(eq(t.knowledgeDocs.id, b.id));
+    if (existing && existing.businessId !== businessId) return c.json({ error: 'not_found' }, 404);
+  }
   const id: string = b.id ?? crypto.randomUUID();
   const row = { id, businessId, title: b.title, content: b.content, enabled: b.enabled ?? true, updatedAt: new Date() };
   await db
@@ -255,6 +278,9 @@ v1.post('/activity/:id/approve', async (c) => {
 v1.post('/send', async (c) => {
   const businessId = c.get('businessId');
   const { groupId, contactId, body } = await c.req.json();
+  if (typeof body !== 'string' || body.length === 0 || overLimit(body, MAX.body)) {
+    return c.json({ error: 'invalid_input' }, 400);
+  }
 
   let contactIds: string[] = [];
   if (contactId) contactIds = [contactId];

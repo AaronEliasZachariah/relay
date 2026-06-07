@@ -26,8 +26,10 @@ export async function handleInbound(input: {
   body: string;
   channel?: 'sms' | 'whatsapp';
 }): Promise<InboundResult> {
-  const { to, from, body } = input;
+  const { to, from } = input;
   const channel = input.channel ?? 'sms';
+  // Cap inbound length so a forged/oversized webhook can't bloat the AI prompt.
+  const body = String(input.body ?? '').slice(0, 2000);
 
   // Resolve the business by its sending number (fallback to the only one in dev).
   let biz = to ? (await db.select().from(t.businesses).where(eq(t.businesses.sendingNumber, to)))[0] : undefined;
