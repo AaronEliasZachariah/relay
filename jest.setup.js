@@ -25,3 +25,19 @@ jest.mock('@expo/vector-icons', () => {
   const Icon = ({ name }) => React.createElement(Text, null, name);
   return new Proxy({}, { get: () => Icon });
 });
+
+// Router — hooks return no-op fns; layout components render nothing.
+jest.mock('expo-router', () => {
+  const React = require('react');
+  const passthrough = ({ children }) => children ?? null;
+  const Nav = Object.assign(passthrough, { Screen: () => null });
+  return {
+    useRouter: () => ({ push: jest.fn(), back: jest.fn(), replace: jest.fn(), navigate: jest.fn() }),
+    useLocalSearchParams: () => globalThis.__expoParams ?? {},
+    usePathname: () => '/',
+    Link: passthrough,
+    Redirect: () => null,
+    Stack: Nav,
+    Tabs: Nav,
+  };
+});

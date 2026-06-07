@@ -53,6 +53,18 @@ Regenerate launcher / splash icons after editing the brand:
 node scripts/gen-icons.js
 ```
 
+## Testing
+
+**91 tests, no external services required** — the server tests run Postgres
+in-process (PGlite), so everything works anywhere, including CI.
+
+```bash
+npm test                 # app: logic, store, services, components + every screen
+cd server && npm test    # server: unit + E2E (API, gating, billing, both pipelines)
+```
+
+CI runs both suites on every push/PR — see [.github/workflows/ci.yml](.github/workflows/ci.yml).
+
 ## Project structure
 
 ```

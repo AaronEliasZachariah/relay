@@ -55,6 +55,16 @@ Point Twilio's inbound + status webhooks at `/v1/webhooks/twilio/inbound` and
 `setInterval` scheduler for a durable queue (pg-boss) — see
 [../docs/DATA-PIPELINE.md](../docs/DATA-PIPELINE.md).
 
+## Tests
+
+```bash
+npm test   # Vitest — unit + E2E against an in-process PGlite database
+```
+
+No Docker or running Postgres needed: the suite starts Postgres in-process,
+migrates it, then exercises the API (`app.request`), Pro gating, the RevenueCat
+webhook, and both pipelines (campaign scheduler + AI auto-reply).
+
 ## Layout
 
 ```
