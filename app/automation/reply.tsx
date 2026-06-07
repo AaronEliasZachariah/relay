@@ -24,7 +24,7 @@ export default function AutoReplyEditor() {
 
   const [name, setName] = useState(existing?.name ?? '');
   const [targetId, setTargetId] = useState<string>(
-    existing?.target.type === 'group' ? existing.target.groupId : groupId ?? (existing?.target.type === 'group' ? '' : 'all'),
+    existing?.target.type === 'group' ? existing.target.groupId : (groupId ?? 'all'),
   );
   const [instruction, setInstruction] = useState(existing?.instruction ?? '');
   const [tone, setTone] = useState<ReplyTone>(existing?.tone ?? 'friendly');

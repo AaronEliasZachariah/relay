@@ -3,7 +3,6 @@ import { Pressable, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, shadows, spacing } from '@/theme/tokens';
@@ -19,8 +18,19 @@ const TABS: Record<string, TabMeta> = {
   settings: { label: 'Settings', on: 'settings', off: 'settings-outline' },
 };
 
+/** The bits of the bottom-tab-bar props we use (avoids a nav types dependency). */
+type TabBarProps = {
+  state: { index: number; routes: { key: string; name: string }[] };
+  navigation: {
+    emit: (event: { type: 'tabPress'; target: string; canPreventDefault: true }) => {
+      defaultPrevented: boolean;
+    };
+    navigate: (name: string) => void;
+  };
+};
+
 /** Floating, frosted tab bar — the signature piece of the app's chrome. */
-export function TabBar({ state, navigation }: BottomTabBarProps) {
+export function TabBar({ state, navigation }: TabBarProps) {
   const { colors, isDark } = useTheme();
   const insets = useSafeAreaInsets();
 
