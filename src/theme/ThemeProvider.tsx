@@ -65,5 +65,7 @@ export function useThemedStyles<T extends StyleSheet.NamedStyles<T>>(
   factory: (theme: Theme) => T,
 ): T {
   const theme = useTheme();
+  // factory is expected to be stable across renders; key only on theme.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   return useMemo(() => StyleSheet.create(factory(theme)), [theme]);
 }

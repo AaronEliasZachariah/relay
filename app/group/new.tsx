@@ -29,7 +29,8 @@ export default function GroupEditor() {
   const toggle = (cid: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
-      next.has(cid) ? next.delete(cid) : next.add(cid);
+      if (next.has(cid)) next.delete(cid);
+      else next.add(cid);
       return next;
     });
 

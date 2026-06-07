@@ -1,17 +1,15 @@
 import React, { useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
-import { Avatar, Badge, Button, Card, Chip, EmptyState, Header, Icon, Screen, Text } from '@/components';
+import { Avatar, Badge, Button, Card, Chip, EmptyState, Header, Screen, Text } from '@/components';
 import { useStore } from '@/data/store';
 import type { MessageActivity } from '@/data/types';
-import { useTheme } from '@/theme/ThemeProvider';
-import { radius, spacing } from '@/theme/tokens';
+import { spacing } from '@/theme/tokens';
 import { dayBucket, relativeTime, statusMeta } from '@/utils/format';
 
 type Filter = 'all' | 'approval' | 'replies' | 'sent';
 
 export default function Activity() {
-  const { colors } = useTheme();
   const activity = useStore((s) => s.activity);
   const contacts = useStore((s) => s.contacts);
   const resolveDraft = useStore((s) => s.resolveDraft);

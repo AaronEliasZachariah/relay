@@ -2,12 +2,12 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { Button, Card, Chip, Icon, Input, ModalHeader, Screen, SectionHeader, Text, Toggle } from '@/components';
+import { Button, Card, Chip, Input, ModalHeader, Screen, SectionHeader, Text, Toggle } from '@/components';
 import { useCampaign, useStore } from '@/data/store';
 import type { Frequency, Schedule, Target } from '@/data/types';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, spacing } from '@/theme/tokens';
-import { applyMerge, firstName } from '@/utils/format';
+import { applyMerge } from '@/utils/format';
 
 const WEEKDAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const TAGS = ['{name}', '{business}'];
@@ -65,7 +65,8 @@ export default function AutoSendEditor() {
   const toggleWeekday = (i: number) =>
     setWeekdays((prev) => {
       const next = new Set(prev);
-      next.has(i) ? next.delete(i) : next.add(i);
+      if (next.has(i)) next.delete(i);
+      else next.add(i);
       return next;
     });
 

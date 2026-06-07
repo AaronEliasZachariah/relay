@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { useRouter } from 'expo-router';
 
-import { Badge, Card, EmptyState, Header, Icon, Screen, SectionHeader, Text, Toggle } from '@/components';
+import { Card, EmptyState, Header, Icon, Screen, SectionHeader, Text, Toggle } from '@/components';
 import type { IconName } from '@/components/Icon';
 import { useStore } from '@/data/store';
 import { useTheme } from '@/theme/ThemeProvider';

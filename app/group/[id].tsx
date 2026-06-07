@@ -2,7 +2,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 
-import { Avatar, Badge, Button, Card, Divider, Header, Icon, ListRow, Screen, SectionHeader, Text, Toggle } from '@/components';
+import { Avatar, Button, Card, Divider, Header, Icon, ListRow, Screen, SectionHeader, Text, Toggle } from '@/components';
 import type { IconName } from '@/components/Icon';
 import { contactsInGroup, useGroup, useStore } from '@/data/store';
 import { useTheme } from '@/theme/ThemeProvider';
@@ -12,7 +12,6 @@ import { scheduleSummary } from '@/utils/format';
 export default function GroupDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const { colors } = useTheme();
 
   const group = useGroup(id);
   const contacts = useStore((s) => s.contacts);

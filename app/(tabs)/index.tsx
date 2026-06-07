@@ -8,7 +8,7 @@ import { contactsInGroup, useStore } from '@/data/store';
 import type { Group } from '@/data/types';
 import { useTheme } from '@/theme/ThemeProvider';
 import { radius, shadows, spacing } from '@/theme/tokens';
-import { firstName, nextRunLabel } from '@/utils/format';
+import { nextRunLabel } from '@/utils/format';
 
 function greeting(): string {
   const h = new Date().getHours();
